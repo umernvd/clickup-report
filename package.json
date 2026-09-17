@@ -1,0 +1,24 @@
+{
+  "name": "clickup-weekly-report",
+  "version": "1.0.0",
+  "description": "Weekly ClickUp to Google Sheets automation",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "sls deploy",
+    "deploy:prod": "sls deploy --stage production",
+    "invoke": "sls invoke -f weeklyReport",
+    "invoke:local": "sls invoke local -f weeklyReport",
+    "remove": "sls remove",
+    "logs": "sls logs -f weeklyReport --tail"
+  },
+  "dependencies": {
+    "axios": "^1.0.0",
+    "googleapis": "^100.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.0",
+    "serverless": "^3.38.0",
+    "serverless-esbuild": "^1.52.0"
+  }
+}

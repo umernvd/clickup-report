@@ -1,0 +1,20 @@
+# .gitignore for clickup-weekly-report
+
+# Dependencies
+node_modules/
+.github/
+
+# Environment variables (contain API keys, secrets, tokens)
+.env
+.env.local
+
+# Service account and credential JSON files
+# NOTE: package.json and package-lock.json are intentionally NOT excluded
+# Only exclude files containing sensitive service account credentials
+*service-account*.json
+*credentials*.json
+
+# Application logs
+logs/
+AGENTS.md
+.github/workflows/weekly-report.yml
