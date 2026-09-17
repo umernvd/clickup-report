@@ -1,0 +1,59 @@
+service: clickup-weekly-report
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 300
+  architecture: x86_64
+  environment:
+    CLICKUP_TOKEN: ${env:CLICKUP_TOKEN}
+    CLICKUP_TEAM_ID: ${env:CLICKUP_TEAM_ID}
+    GOOGLE_SERVICE_ACCOUNT_KEY: ${env:GOOGLE_SERVICE_ACCOUNT_KEY}
+    GOOGLE_SPREADSHEET_ID: ${env:GOOGLE_SPREADSHEET_ID}
+  tags:
+    Project: clickup-weekly-report
+    ManagedBy: serverless
+
+package:
+  individually: true
+  patterns:
+    - '!node_modules/**'
+    - '!tests/**'
+    - '!.env'
+    - '!.env.example'
+    - '!.git/**'
+    - '!serverless.yml'
+    - '!README.md'
+    - '!AGENTS.md'
+
+functions:
+  weeklyReport:
+    handler: src/handler.handler
+    description: Generates weekly ClickUp report and writes to Google Sheets
+    environment:
+      NODE_ENV: production
+    events:
+      - schedule:
+          rate: cron(0 8 ? * MON *)  # Every Monday at 8:00 UTC
+          enabled: true
+          description: Weekly report generation trigger
+    package:
+      patterns:
+        - 'src/**'
+
+plugins:
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    platform: node
+    target: node18
+    external:
+      - '@aws-sdk/*'
