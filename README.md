@@ -151,7 +151,7 @@ node tests/test-sheets-write.js        # writes to "TEST - Delete Me" tab
 
 - Sequential task fetching — slow for large workspaces (could add concurrency)
 - ClickUp row groups expand by default — no API way to collapse them
-- `aggregateReport()` in aggregate.js is dead code (only used in perf tests)
+- `estimateMs` is computed in aggregate.js but never used in the report output
 - No CI/CD — GitHub Actions workflow is a stub
 
 ## ClickUp API notes
