@@ -10,15 +10,15 @@ export async function moveSheetToFirst(sheetsClient, spreadsheetId, sheetId) {
                 sheetId,
                 index: 0,
               },
-              fields: 'index',
+              fields: "index",
             },
           },
         ],
       },
     });
 
-    console.log('Sheet moved to first position.');
+    console.log("Sheet reordered");
   } catch (error) {
-    console.warn(`Failed to reorder sheet (non-critical): ${error.message}`);
+    console.warn(`Failed to reorder sheet: ${error.message}`);
   }
 }
