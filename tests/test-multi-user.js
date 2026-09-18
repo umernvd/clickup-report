@@ -12,8 +12,8 @@ const mockTasks = [
     assignees: [
       { id: 'user_1', username: 'Alice', email: 'alice@test.com' },
     ],
-    due_date: '1600000000000', // Sept 2020 = past date = overdue
-    time_estimate: '7200000', // 2 hours
+    due_date: '1600000000000',
+    time_estimate: '7200000',
     listName: 'Design',
     folderName: 'Project Alpha',
     spaceName: 'Main Space',
@@ -29,7 +29,7 @@ const mockTasks = [
       { id: 'user_2', username: 'Bob', email: 'bob@test.com' },
     ],
     due_date: null,
-    time_estimate: '3600000', // 1 hour
+    time_estimate: '3600000',
     listName: 'Backend',
     folderName: 'Project Alpha',
     spaceName: 'Main Space',
@@ -45,13 +45,13 @@ const mockTasks = [
       { id: 'user_2', username: 'Bob', email: 'bob@test.com' },
       { id: 'user_3', username: 'Charlie', email: 'charlie@test.com' },
     ],
-    due_date: '3000000000000', // future date = not overdue
+    due_date: '3000000000000',
     time_estimate: '0',
     listName: 'Backend',
     folderName: 'Project Alpha',
     spaceName: 'Main Space',
   },
-  // Unassigned task — should be EXCLUDED
+  // Unassigned task
   {
     id: 'task_004',
     name: 'Unassigned Task',
@@ -64,7 +64,7 @@ const mockTasks = [
     folderName: 'Project Alpha',
     spaceName: 'Main Space',
   },
-  // Task with assignees: undefined — should be EXCLUDED
+  // Task with assignees: undefined
   {
     id: 'task_005',
     name: 'No Assignees Field',
@@ -87,22 +87,20 @@ const mockTasks = [
       { id: 'user_1', username: 'Alice', email: 'alice@test.com' },
     ],
     due_date: null,
-    time_estimate: '1800000', // 30 min
+    time_estimate: '1800000',
     listName: 'Docs',
     folderName: 'Project Beta',
     spaceName: 'Secondary Space',
   },
 ];
 
+// Each time entry includes a `user` field identifying who logged the time.
+// Hours are attributed per-user, not per-task.
 const mockTimeEntries = [
-  // Alice works 1h on task_001
-  { task: { id: 'task_001' }, duration: 3600000 },
-  // Bob works 2h on task_002
-  { task: { id: 'task_002' }, duration: 7200000 },
-  // Alice works 30min on task_002
-  { task: { id: 'task_002' }, duration: 1800000 },
-  // Charlie works 1h on task_003
-  { task: { id: 'task_003' }, duration: 3600000 },
+  { task: { id: 'task_001' }, user: { id: 'user_1', username: 'Alice', email: 'alice@test.com' }, duration: 3600000 },
+  { task: { id: 'task_002' }, user: { id: 'user_2', username: 'Bob', email: 'bob@test.com' }, duration: 7200000 },
+  { task: { id: 'task_002' }, user: { id: 'user_1', username: 'Alice', email: 'alice@test.com' }, duration: 1800000 },
+  { task: { id: 'task_003' }, user: { id: 'user_3', username: 'Charlie', email: 'charlie@test.com' }, duration: 3600000 },
 ];
 
 // --- Tests ---
@@ -125,7 +123,6 @@ const result = flattenTasksForReport(mockTasks, mockTimeEntries);
 const taskNames = result.byTask.map((t) => t.taskName);
 assert(!taskNames.includes('Unassigned Task'), 'Unassigned task excluded');
 assert(!taskNames.includes('No Assignees Field'), 'Task with undefined assignees excluded');
-// task_001(1) + task_002(2) + task_003(3) + task_006(1) = 7 rows
 assert(taskNames.length === 7, `Expected 7 task rows, got ${taskNames.length}`);
 
 console.log('\n=== Test 2: Multi-assignee tasks produce multiple rows ===');
@@ -151,7 +148,21 @@ const docsRows = result.byTask.filter((t) => t.taskName === 'Write Docs');
 assert(docsRows.length === 1, `Write Docs has 1 row, got ${docsRows.length}`);
 assert(docsRows[0].assigneeName === 'Alice', 'Write Docs assigned to Alice');
 
-console.log('\n=== Test 4: Summary totals are correct per user ===');
+console.log('\n=== Test 4: Per-user hours are attributed correctly ===');
+const buildApiAlice = result.byTask.find((t) => t.taskName === 'Build API' && t.assigneeName === 'Alice');
+const buildApiBob = result.byTask.find((t) => t.taskName === 'Build API' && t.assigneeName === 'Bob');
+assert(buildApiAlice.hoursLogged === 0.5, `Alice logged 0.5h on Build API, got ${buildApiAlice.hoursLogged}`);
+assert(buildApiBob.hoursLogged === 2.0, `Bob logged 2.0h on Build API, got ${buildApiBob.hoursLogged}`);
+
+const codeReviewAlice = result.byTask.find((t) => t.taskName === 'Code Review' && t.assigneeName === 'Alice');
+const codeReviewCharlie = result.byTask.find((t) => t.taskName === 'Code Review' && t.assigneeName === 'Charlie');
+assert(codeReviewAlice.hoursLogged === 0, `Alice logged 0h on Code Review, got ${codeReviewAlice.hoursLogged}`);
+assert(codeReviewCharlie.hoursLogged === 1.0, `Charlie logged 1.0h on Code Review, got ${codeReviewCharlie.hoursLogged}`);
+
+const designAlice = result.byTask.find((t) => t.taskName === 'Design Homepage' && t.assigneeName === 'Alice');
+assert(designAlice.hoursLogged === 1.0, `Alice logged 1.0h on Design Homepage, got ${designAlice.hoursLogged}`);
+
+console.log('\n=== Test 5: Summary totals are correct per user ===');
 const alice = result.byUserTotal.find((u) => u.assigneeName === 'Alice');
 const bob = result.byUserTotal.find((u) => u.assigneeName === 'Bob');
 const charlie = result.byUserTotal.find((u) => u.assigneeName === 'Charlie');
@@ -161,28 +172,28 @@ assert(bob !== undefined, 'Bob found in summary');
 assert(charlie !== undefined, 'Charlie found in summary');
 assert(result.byUserTotal.length === 3, `Expected 3 users in summary, got ${result.byUserTotal.length}`);
 
-// Alice: task_001 (1h) + task_002 (2.5h) + task_003 (1h) = 4.5h
-// Each assignee gets full task hours (not split)
+// Alice: task_001(1h) + task_002(0.5h) = 1.5h total
 // Status: Design Homepage(inProgress), Build API(todo), Code Review(done), Write Docs(todo)
+assert(alice.totalHoursLogged === 1.5, `Alice hours: expected 1.5, got ${alice.totalHoursLogged}`);
 assert(alice.totalTodo === 2, `Alice todo: expected 2, got ${alice.totalTodo}`);
 assert(alice.totalInProgress === 1, `Alice inProgress: expected 1, got ${alice.totalInProgress}`);
 assert(alice.totalDone === 1, `Alice done: expected 1, got ${alice.totalDone}`);
 assert(alice.projects === 'Main Space, Secondary Space', `Alice projects: expected "Main Space, Secondary Space", got "${alice.projects}"`);
 
-// Bob: task_002 (2.5h) + task_003 (1h) = 3.5h
+// Bob: task_002(2h) = 2h total (no time on task_003)
 // Status: Build API(todo), Code Review(done)
-assert(bob.totalHoursLogged === 3.5, `Bob hours: expected 3.5, got ${bob.totalHoursLogged}`);
+assert(bob.totalHoursLogged === 2, `Bob hours: expected 2, got ${bob.totalHoursLogged}`);
 assert(bob.totalTodo === 1, `Bob todo: expected 1, got ${bob.totalTodo}`);
 assert(bob.totalInProgress === 0, `Bob inProgress: expected 0, got ${bob.totalInProgress}`);
 assert(bob.totalDone === 1, `Bob done: expected 1, got ${bob.totalDone}`);
 assert(bob.projects === 'Main Space', `Bob projects: expected "Main Space", got "${bob.projects}"`);
 
-// Charlie: task_003 (1h) = 1h, tasks: Code Review(done)
+// Charlie: task_003(1h) = 1h total
 assert(charlie.totalHoursLogged === 1, `Charlie hours: expected 1, got ${charlie.totalHoursLogged}`);
 assert(charlie.totalDone === 1, `Charlie done: expected 1, got ${charlie.totalDone}`);
 assert(charlie.projects === 'Main Space', `Charlie projects: expected "Main Space", got "${charlie.projects}"`);
 
-console.log('\n=== Test 5: All task rows have correct fields ===');
+console.log('\n=== Test 6: All task rows have correct fields ===');
 for (const row of result.byTask) {
   assert(row.taskName !== '', `Task "${row.taskName}" has non-empty taskName`);
   assert(row.assigneeName !== '', `Task "${row.taskName}" has non-empty assigneeName`);
