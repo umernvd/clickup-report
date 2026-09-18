@@ -107,4 +107,4 @@ console.log(`  Tasks: ${tasks.length}`);
 console.log(`  Time entries: ${timeEntries.length}`);
 console.log(`  Rows written: ${report.byTask.length + report.byUserTotal.length + 3}`);
 console.log(`\nAvg API call duration:`);
-console.log(`  ClickUp: ${(7428 / clickupRequests).toFixed(0)}ms avg (estimated from step timings)`);
+console.log(`  ClickUp: N/A (instrumented per-request logging above)`);
