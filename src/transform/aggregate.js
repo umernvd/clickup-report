@@ -18,12 +18,13 @@ function isOverdue(task) {
 }
 
 export function flattenTasksForReport(tasks, timeEntries) {
-  const timeByTask = new Map();
+  const timeByTaskUser = new Map();
   for (const entry of timeEntries) {
     const taskId = entry.task?.id;
-    if (!taskId) continue;
-    const ms = entry.duration;
-    timeByTask.set(taskId, (timeByTask.get(taskId) || 0) + ms);
+    const userId = entry.user?.id;
+    if (!taskId || !userId) continue;
+    const key = `${taskId}||${userId}`;
+    timeByTaskUser.set(key, (timeByTaskUser.get(key) || 0) + entry.duration);
   }
 
   const byTask = [];
@@ -49,7 +50,7 @@ export function flattenTasksForReport(tasks, timeEntries) {
           : statusCat === 'inProgress' ? 'In Progress'
           : 'Done',
         isOverdue: isOverdue(task),
-        hoursLogged: Math.round(((timeByTask.get(task.id) || 0) / 3_600_000) * 100) / 100,
+        hoursLogged: Math.round(((timeByTaskUser.get(`${task.id}||${assignee.id}`) || 0) / 3_600_000) * 100) / 100,
         dueDate: dueDate ? dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '',
       });
     }
