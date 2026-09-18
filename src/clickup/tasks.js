@@ -1,10 +1,12 @@
-import { fetchAllPages } from './pagination.js';
+import { fetchAllPages } from "./pagination.js";
 
 export async function getTasksForList(client, listId) {
   const tasks = await fetchAllPages((page) =>
-    client.get(`/list/${listId}/task`, {
-      params: { include_closed: true, subtasks: true, page },
-    }).then((res) => res.data.tasks)
+    client
+      .get(`/list/${listId}/task`, {
+        params: { include_closed: true, subtasks: true, page },
+      })
+      .then((res) => res.data.tasks),
   );
   return tasks;
 }
@@ -14,7 +16,9 @@ export async function getAllTasks(client, lists) {
 
   for (let i = 0; i < lists.length; i++) {
     const list = lists[i];
-    console.log(`Fetching tasks for list: ${list.name} (${i + 1}/${lists.length})`);
+    console.log(
+      `Fetching tasks for list: ${list.name} (${i + 1}/${lists.length})`,
+    );
 
     try {
       const tasks = await getTasksForList(client, list.id);
@@ -29,10 +33,10 @@ export async function getAllTasks(client, lists) {
         });
       }
     } catch (error) {
-      console.warn(`Failed to fetch tasks for list '${list.name}' (id: ${list.id}): ${error.message}. Skipping.`);
+      console.warn(`Skipping list ${list.name}: ${error.message}`);
     }
   }
 
-  console.log(`Total tasks fetched across all lists: ${allTasks.length}`);
+  console.log(`Tasks: ${allTasks.length}`);
   return allTasks;
 }
